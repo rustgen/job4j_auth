@@ -4,22 +4,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
-import ru.job4j.repository.PersonRepository;
+import ru.job4j.service.PersonService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/person")
 public class PersonController {
-    private final PersonRepository persons;
 
-    public PersonController(final PersonRepository persons) {
+    private final PersonService persons;
+
+    public PersonController(final PersonService persons) {
         this.persons = persons;
     }
 
-    @GetMapping("/")
+    @GetMapping
     public List<Person> findAll() {
-        return (List<Person>) this.persons.findAll();
+        return this.persons.findAll();
     }
 
     @GetMapping("/{id}")
@@ -31,7 +33,7 @@ public class PersonController {
         );
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<Person> create(@RequestBody Person person) {
         return new ResponseEntity<Person>(
                 this.persons.save(person),
@@ -39,14 +41,22 @@ public class PersonController {
         );
     }
 
-    @PutMapping("/")
+    @PutMapping
     public ResponseEntity<Void> update(@RequestBody Person person) {
+        Optional<Person> personsById = persons.findById(person.getId());
+        if (personsById.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         this.persons.save(person);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
+        Optional<Person> personsById = persons.findById(id);
+        if (personsById.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         Person person = new Person();
         person.setId(id);
         this.persons.delete(person);
