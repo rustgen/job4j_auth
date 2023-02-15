@@ -22,7 +22,7 @@ public class PersonController {
         this.encoder = encoder;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Person> findAll() {
         return this.persons.findAll();
     }
