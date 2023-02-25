@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
+import ru.job4j.dto.PersonDTO;
 import ru.job4j.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,19 +53,35 @@ public class PersonController {
         );
     }
 
+    @PatchMapping("/changePassword/{id}")
+    public ResponseEntity<Person> updatePassword(@PathVariable int id, @RequestBody PersonDTO personDTO) {
+        Optional<Person> optionalPerson = persons.findById(id);
+        if (optionalPerson.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Person person = optionalPerson.get();
+        person.setPassword(encoder.encode(personDTO.getPassword()));
+        persons.save(person);
+        return new ResponseEntity<>(person, HttpStatus.OK);
+    }
+
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
-        if (person.getLogin().length() < 3 || person.getLogin().length() > 15) {
+    public ResponseEntity<Person> create(@RequestBody PersonDTO personDTO) {
+        String login = personDTO.getLogin();
+        String password = personDTO.getPassword();
+        if (login.length() < 3 || login.length() > 15) {
             throw new IllegalArgumentException("Invalid login. Login length should be 3 - 15 characters.");
         }
-        if (!person.getPassword().contains("[A-Za-z0-9]+") || person.getPassword().length() < 4) {
+        if (!password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{4,}$") || password.length() < 4) {
             throw new IllegalArgumentException("Password should contain only characters (at least 1 LowerCase and UpperCase"
                                                + " and  at least one number. Also length can't be less than 4 symbols.");
         }
-        if (person.getLogin() == null || person.getPassword() == null) {
+        if (login == null || password == null) {
             throw new NullPointerException("Login and password can't be empty.");
         }
-        person.setPassword(encoder.encode(person.getPassword()));
+        Person person = new Person();
+        person.setLogin(login);
+        person.setPassword(encoder.encode(password));
         return new ResponseEntity<Person>(
                 this.persons.save(person),
                 HttpStatus.CREATED
@@ -108,4 +125,5 @@ public class PersonController {
         }));
         LOGGER.error(e.getLocalizedMessage());
     }
+
 }
