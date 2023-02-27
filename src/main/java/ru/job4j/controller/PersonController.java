@@ -14,6 +14,7 @@ import ru.job4j.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public class PersonController {
     }
 
     @PatchMapping("/changePassword/{id}")
-    public ResponseEntity<Person> updatePassword(@PathVariable int id, @RequestBody PersonDTO personDTO) {
+    public ResponseEntity<Person> updatePassword(@PathVariable int id, @Valid @RequestBody PersonDTO personDTO) {
         Optional<Person> optionalPerson = persons.findById(id);
         if (optionalPerson.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -66,18 +67,12 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody PersonDTO personDTO) {
+    public ResponseEntity<Person> create(@Valid @RequestBody PersonDTO personDTO) {
         String login = personDTO.getLogin();
         String password = personDTO.getPassword();
-        if (login.length() < 3 || login.length() > 15) {
-            throw new IllegalArgumentException("Invalid login. Login length should be 3 - 15 characters.");
-        }
         if (!password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{4,}$") || password.length() < 4) {
             throw new IllegalArgumentException("Password should contain only characters (at least 1 LowerCase and UpperCase"
-                                               + " and  at least one number. Also length can't be less than 4 symbols.");
-        }
-        if (login == null || password == null) {
-            throw new NullPointerException("Login and password can't be empty.");
+                                               + " and  at least one number.");
         }
         Person person = new Person();
         person.setLogin(login);
